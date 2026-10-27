@@ -1,0 +1,10 @@
+// Print da página pública da organização no GitHub (pra conferir o README do perfil)
+import { createRequire } from 'node:module'
+const require = createRequire('C:/K3Games/trailer-studio/')
+const { chromium } = require('playwright-core')
+const b = await chromium.launch({ headless: true, executablePath: 'C:/Users/kelvi/AppData/Local/ms-playwright/chromium-1247/chrome-win64/chrome.exe' })
+const p = await b.newPage({ viewport: { width: 1280, height: 900 } })
+await p.goto('https://github.com/K3-Games-Studio', { waitUntil: 'networkidle' })
+await p.waitForTimeout(1500)
+await p.screenshot({ path: 'C:/K3Games/k3-puzzles/tools/shots/org.png', fullPage: true })
+await b.close(); console.log('ok')
