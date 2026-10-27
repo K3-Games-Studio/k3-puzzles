@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lanterna: puzzle do dia · K3 Games Studio</title>
+<meta name="description" content="Acenda todas as lanternas. Um puzzle grátis por dia, do K3 Games Studio.">
+<meta property="og:title" content="Lanterna: puzzle do dia">
+<meta property="og:description" content="Acenda todas as lanternas. Um puzzle grátis por dia.">
+<meta property="og:image" content="https://k3gamesstudio.com/puzzles/assets/og-lanterna.png">
+<link rel="icon" href="../assets/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/k3.css">
+<style>
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:min(86vw,380px)}
+  .cell{aspect-ratio:1;border-radius:14px;border:1px solid var(--line);background:radial-gradient(circle at 50% 40%,#1c1c24,#101015);cursor:pointer;position:relative;transition:transform .08s,background .2s,box-shadow .2s}
+  .cell::after{content:"";position:absolute;inset:26%;border-radius:50% 50% 44% 44%;background:#2a2a33;transition:background .2s,box-shadow .2s}
+  .cell.on{background:radial-gradient(circle at 50% 40%,#3a2108,#140c05);border-color:#6b3a10;box-shadow:0 0 22px rgba(255,140,30,.25)}
+  .cell.on::after{background:radial-gradient(circle at 50% 35%,#fff3c4,var(--ember2) 45%,var(--ember));box-shadow:0 0 18px var(--ember2)}
+  .cell:active{transform:scale(.94)}
+  .done .cell.on::after{animation:glow 1.2s ease-in-out infinite alternate}
+  @keyframes glow{to{box-shadow:0 0 30px #fff0b0}}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="../">K3 <span>Puzzles</span></a><a class="back" href="../" data-en="← all puzzles">← todos os puzzles</a></div>
+<h1 data-en="Lantern">Lanterna</h1>
+<p class="sub" data-en="Tap a lantern to flip it and its 4 neighbors. Light up all 25.">Toque numa lanterna pra virar ela e as 4 vizinhas. Acenda as 25.</p>
+<span class="tag" id="tag">#1</span>
+<div class="stats">
+  <div class="stat"><b id="moves">0</b><small data-en="moves">jogadas</small></div>
+  <div class="stat"><b id="par">0</b><small data-en="par">meta</small></div>
+  <div class="stat"><b id="time">0:00</b><small data-en="time">tempo</small></div>
+</div>
+<div class="board"><div class="grid" id="grid"></div></div>
+<div class="row"><button class="btn" id="reset" data-en="Restart">Recomeçar</button></div>
+<div class="win" id="win"><h2 data-en="All lit!">Tudo aceso!</h2><p id="winmsg"></p><button class="btn main" id="share" data-en="Share result">Compartilhar resultado</button></div>
+<p class="help" data-en="A new puzzle every day, the same for everyone. Inspired by Lantern Logic.">Um puzzle novo por dia, igual pra todo mundo. Inspirado no Lantern Logic.</p>
+<div class="foot">K3 Games Studio · <a href="https://k3gamesstudio.com">k3gamesstudio.com</a></div>
+<script type="module">
+import { rng, dayNumber, tr, clock, share, i18n } from '../assets/k3.js';
+i18n();
+const N = 5, R = rng(1), day = dayNumber();
+document.getElementById('tag').textContent = tr('Puzzle do dia', 'Daily puzzle') + ' #' + day;
+// parte de tudo aceso e aplica toques aleatórios: sempre tem solução, e a meta é o nº de toques
+let start = new Array(N * N).fill(1); const presses = new Set();
+const want = 5 + Math.floor(R() * 4);
+while (presses.size < want) presses.add(Math.floor(R() * N * N));
+const flip = (b, i) => { const x = i % N, y = (i / N) | 0; for (const [dx, dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && nx < N && ny < N) b[ny * N + nx] ^= 1; } };
+for (const p of presses) flip(start, p);
+if (start.every(v => v)) flip(start, 12);
+document.getElementById('par').textContent = presses.size;
+window.__k3test = { presses: [...presses] }; // usado só pelo teste automático
+let board, moves, timer, done;
+const grid = document.getElementById('grid');
+function render() { [...grid.children].forEach((c, i) => c.classList.toggle('on', !!board[i])); document.getElementById('moves').textContent = moves; }
+function reset() {
+  board = start.slice(); moves = 0; done = false; grid.classList.remove('done'); document.getElementById('win').classList.remove('on');
+  if (timer) timer.stop(); timer = clock(document.getElementById('time')); render();
+}
+for (let i = 0; i < N * N; i++) {
+  const c = document.createElement('div'); c.className = 'cell';
+  c.addEventListener('click', () => {
+    if (done) return; flip(board, i); moves++; render();
+    if (board.every(v => v)) {
+      done = true; timer.stop(); grid.classList.add('done');
+      const s = timer.secs(), t = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      document.getElementById('winmsg').textContent = tr(`${moves} jogadas (meta ${presses.size}) em ${t}.`, `${moves} moves (par ${presses.size}) in ${t}.`);
+      document.getElementById('win').classList.add('on');
+      document.getElementById('share').onclick = () => share(`🏮 ${tr('Lanterna', 'Lantern')} #${day}: ${moves} ${tr('jogadas', 'moves')} (${tr('meta', 'par')} ${presses.size}) ⏱ ${t}${moves <= presses.size ? ' 🌟' : ''}\nK3 Puzzles`);
+    }
+  });
+  grid.appendChild(c);
+}
+document.getElementById('reset').onclick = reset;
+reset();
+</script>
+</body>
+</html>

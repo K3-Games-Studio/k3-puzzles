@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K3 Puzzles: puzzles grátis do dia · K3 Games Studio</title>
+<meta name="description" content="Três puzzles grátis por dia, iguais pra todo mundo: Lanterna, Ponto-Cruz e Deslize. Do K3 Games Studio.">
+<meta property="og:title" content="K3 Puzzles: puzzles grátis do dia">
+<meta property="og:description" content="Lanterna, Ponto-Cruz e Deslize. Um desafio novo por dia, igual pra todo mundo.">
+<meta property="og:image" content="https://k3gamesstudio.com/puzzles/assets/og-puzzles.png">
+<link rel="icon" href="assets/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/k3.css">
+<style>
+  .cards{display:grid;gap:14px;width:100%;max-width:520px;margin-top:22px}
+  .card{display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px;text-decoration:none;color:var(--txt);transition:border-color .2s,transform .1s}
+  .card:hover{border-color:#6b3a10}.card:active{transform:scale(.99)}
+  .ico{width:58px;height:58px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(145deg,#3a2108,#140c05);border:1px solid #6b3a10}
+  .card h3{font-family:var(--disp);text-transform:uppercase;font-size:20px;letter-spacing:-.3px}
+  .card p{color:var(--muted);font-size:14px}
+  .play{margin-left:auto;color:var(--ember2);font-weight:700;font-size:14px;white-space:nowrap}
+  .games{margin-top:30px;text-align:center;color:var(--muted);font-size:14px;max-width:460px}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="https://k3gamesstudio.com">K3 <span>Games</span> Studio</a><a class="back" href="https://github.com/K3-Games-Studio">GitHub</a></div>
+<h1>K3 Puzzles</h1>
+<p class="sub" data-en="Three free puzzles a day, the same for everyone. No sign-up, no ads.">Três puzzles grátis por dia, iguais pra todo mundo. Sem cadastro, sem anúncio.</p>
+<span class="tag" id="tag">#1</span>
+<div class="cards">
+  <a class="card" href="lanterna/"><div class="ico">🏮</div><div><h3 data-en="Lantern">Lanterna</h3><p data-en="Light up all 25 lanterns.">Acenda as 25 lanternas.</p></div><span class="play" data-en="Play →">Jogar →</span></a>
+  <a class="card" href="ponto-cruz/"><div class="ico">🧵</div><div><h3 data-en="Cross-Stitch">Ponto-Cruz</h3><p data-en="Stitch the hidden picture from the clues.">Borde o desenho escondido pelas pistas.</p></div><span class="play" data-en="Play →">Jogar →</span></a>
+  <a class="card" href="deslize/"><div class="ico">🧩</div><div><h3 data-en="Slide">Deslize</h3><p data-en="Slide the tiles back into order.">Deslize as peças de volta pra ordem.</p></div><span class="play" data-en="Play →">Jogar →</span></a>
+</div>
+<p class="games" data-en="Liked it? Our full games: <a href='https://play.google.com/store/apps/details?id=com.k3games.lanternlogic'>Lantern Logic</a> and <a href='https://play.google.com/store/apps/details?id=com.k3games.stitchlogic'>Stitch Logic</a> on Google Play.">Curtiu? Os nossos jogos completos: <a href="https://play.google.com/store/apps/details?id=com.k3games.lanternlogic">Lantern Logic</a> e <a href="https://play.google.com/store/apps/details?id=com.k3games.stitchlogic">Stitch Logic</a> na Google Play.</p>
+<div class="foot">K3 Games Studio · <a href="https://k3gamesstudio.com">k3gamesstudio.com</a> · desenvolvido por <a href="https://kelvinbiffi.com">Kelvin Biffi</a></div>
+<script type="module">
+import { dayNumber, tr, i18n } from './assets/k3.js';
+i18n();
+document.getElementById('tag').textContent = tr('Puzzles do dia', 'Daily puzzles') + ' #' + dayNumber();
+</script>
+</body>
+</html>

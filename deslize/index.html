@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deslize: puzzle do dia · K3 Games Studio</title>
+<meta name="description" content="Ponha as peças de 1 a 8 em ordem deslizando pelo espaço vazio. Um puzzle grátis por dia, do K3 Games Studio.">
+<meta property="og:title" content="Deslize: puzzle do dia">
+<meta property="og:description" content="Ponha as peças em ordem deslizando pelo espaço vazio.">
+<meta property="og:image" content="https://k3gamesstudio.com/puzzles/assets/og-deslize.png">
+<link rel="icon" href="../assets/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/k3.css">
+<style>
+  .slide{position:relative;width:min(84vw,340px);aspect-ratio:1}
+  .tile{position:absolute;width:calc(33.333% - 8px);height:calc(33.333% - 8px);border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:clamp(30px,10vw,46px);cursor:pointer;user-select:none;
+    background:linear-gradient(145deg,#2a2a35,#17171e);border:1px solid #33333f;color:var(--txt);transition:left .14s ease-out,top .14s ease-out,box-shadow .2s}
+  .tile.home{background:linear-gradient(145deg,#4a2a10,#24140a);border-color:#7a4214;color:var(--amber);box-shadow:inset 0 0 0 1px rgba(255,176,32,.15)}
+  .done .tile{box-shadow:0 0 22px rgba(255,140,30,.35)}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="../">K3 <span>Puzzles</span></a><a class="back" href="../" data-en="← all puzzles">← todos os puzzles</a></div>
+<h1 data-en="Slide">Deslize</h1>
+<p class="sub" data-en="Tap a tile next to the gap to slide it. Put 1 to 8 in order.">Toque numa peça ao lado do espaço vazio pra deslizar. Ponha de 1 a 8 em ordem.</p>
+<span class="tag" id="tag">#1</span>
+<div class="stats"><div class="stat"><b id="moves">0</b><small data-en="moves">jogadas</small></div><div class="stat"><b id="time">0:00</b><small data-en="time">tempo</small></div></div>
+<div class="board"><div class="slide" id="slide"></div></div>
+<div class="row"><button class="btn" id="reset" data-en="Restart">Recomeçar</button></div>
+<div class="win" id="win"><h2 data-en="In order!">Em ordem!</h2><p id="winmsg"></p><button class="btn main" id="share" data-en="Share result">Compartilhar resultado</button></div>
+<p class="help" data-en="A new puzzle every day, the same for everyone. The orange tiles are already home.">Um puzzle novo por dia, igual pra todo mundo. As peças laranjas já estão no lugar.</p>
+<div class="foot">K3 Games Studio · <a href="https://k3gamesstudio.com">k3gamesstudio.com</a></div>
+<script type="module">
+import { rng, dayNumber, tr, clock, share, i18n } from '../assets/k3.js';
+i18n();
+const N = 3, R = rng(3), day = dayNumber();
+document.getElementById('tag').textContent = tr('Puzzle do dia', 'Daily puzzle') + ' #' + day;
+// embaralha com movimentos válidos a partir do resolvido: sempre tem solução
+const solved = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+let start = solved.slice(), prev = -1;
+const nb = i => { const x = i % N, y = (i / N) | 0, o = []; if (x > 0) o.push(i - 1); if (x < N - 1) o.push(i + 1); if (y > 0) o.push(i - N); if (y < N - 1) o.push(i + N); return o; };
+for (let k = 0; k < 60 + Math.floor(R() * 30); k++) {
+  const z = start.indexOf(0), opts = nb(z).filter(j => j !== prev), j = opts[Math.floor(R() * opts.length)];
+  [start[z], start[j]] = [start[j], start[z]]; prev = z;
+}
+if (start.every((v, i) => v === solved[i])) { const z = start.indexOf(0); const j = nb(z)[0]; [start[z], start[j]] = [start[j], start[z]]; }
+const box = document.getElementById('slide'); let st, moves, timer, done; const tiles = {};
+for (let v = 1; v <= 8; v++) { const t = document.createElement('div'); t.className = 'tile'; t.textContent = v; t.onclick = () => tap(v); box.appendChild(t); tiles[v] = t; }
+function render() {
+  st.forEach((v, i) => { if (!v) return; const t = tiles[v]; t.style.left = `calc(${(i % N) * 33.333}% + 4px)`; t.style.top = `calc(${((i / N) | 0) * 33.333}% + 4px)`; t.classList.toggle('home', v === i + 1); });
+  document.getElementById('moves').textContent = moves;
+}
+function tap(v) {
+  if (done) return;
+  const i = st.indexOf(v), z = st.indexOf(0);
+  if (!nb(z).includes(i)) return;
+  [st[i], st[z]] = [st[z], st[i]]; moves++; render();
+  if (st.every((x, k) => x === solved[k])) {
+    done = true; timer.stop(); box.classList.add('done');
+    const s = timer.secs(), t = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    document.getElementById('winmsg').textContent = tr(`${moves} jogadas em ${t}.`, `${moves} moves in ${t}.`);
+    document.getElementById('win').classList.add('on');
+    document.getElementById('share').onclick = () => share(`🧩 ${tr('Deslize', 'Slide')} #${day}: ${moves} ${tr('jogadas', 'moves')} ⏱ ${t}\nK3 Puzzles`);
+  }
+}
+function reset() { st = start.slice(); moves = 0; done = false; box.classList.remove('done'); document.getElementById('win').classList.remove('on'); if (timer) timer.stop(); timer = clock(document.getElementById('time')); render(); }
+document.getElementById('reset').onclick = reset;
+reset();
+</script>
+</body>
+</html>

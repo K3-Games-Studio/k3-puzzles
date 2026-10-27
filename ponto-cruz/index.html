@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ponto-Cruz: puzzle do dia · K3 Games Studio</title>
+<meta name="description" content="Nonograma 6x6: descubra o desenho bordado pelas pistas. Um puzzle grátis por dia, do K3 Games Studio.">
+<meta property="og:title" content="Ponto-Cruz: puzzle do dia">
+<meta property="og:description" content="Nonograma 6x6: descubra o desenho pelas pistas.">
+<meta property="og:image" content="https://k3gamesstudio.com/puzzles/assets/og-ponto-cruz.png">
+<link rel="icon" href="../assets/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/k3.css">
+<style>
+  .nono{display:grid;grid-template-columns:auto repeat(6,1fr);grid-template-rows:auto repeat(6,1fr);gap:4px;width:min(90vw,400px)}
+  .clue{color:var(--muted);font-weight:700;font-size:14px;display:flex;align-items:flex-end;justify-content:center;gap:2px;line-height:1.1;padding:2px}
+  .clue.col{flex-direction:column;align-items:center;justify-content:flex-end;min-height:54px}
+  .clue.row{justify-content:flex-end;align-items:center;gap:7px;padding-right:8px;min-width:46px}
+  .clue.ok{color:var(--ok)}
+  .sq{aspect-ratio:1;border-radius:8px;border:1px solid var(--line);background:#16161d;cursor:pointer;position:relative;transition:background .12s}
+  .sq.fill{background:radial-gradient(circle at 40% 35%,#ffb98a,var(--ember) 60%,#b8410a);border-color:#ff8a3c}
+  .sq.fill::before,.sq.fill::after{content:"";position:absolute;left:22%;right:22%;top:48%;height:3px;border-radius:2px;background:rgba(255,240,220,.65)}
+  .sq.fill::before{transform:rotate(45deg)}.sq.fill::after{transform:rotate(-45deg)}
+  .sq.x::before{content:"×";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dim);font-weight:700;font-size:20px}
+  .mode{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px;gap:4px;margin-top:14px}
+  .mode button{border:0;background:none;color:var(--muted);font:700 14px var(--sans);padding:8px 16px;border-radius:999px;cursor:pointer}
+  .mode button.on{background:var(--ember);color:#160a02}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="../">K3 <span>Puzzles</span></a><a class="back" href="../" data-en="← all puzzles">← todos os puzzles</a></div>
+<h1 data-en="Cross-Stitch">Ponto-Cruz</h1>
+<p class="sub" data-en="The numbers say how many stitches in a row each line and column has, in order. Stitch the hidden picture.">Os números dizem quantos pontos seguidos cada linha e coluna tem, em ordem. Borde o desenho escondido.</p>
+<span class="tag" id="tag">#1</span>
+<div class="stats"><div class="stat"><b id="time">0:00</b><small data-en="time">tempo</small></div><div class="stat"><b id="err">0</b><small data-en="checks">conferidas</small></div></div>
+<div class="board"><div class="nono" id="nono"></div></div>
+<div class="mode"><button id="mFill" class="on" data-en="✚ Stitch">✚ Bordar</button><button id="mX" data-en="✕ Mark empty">✕ Marcar vazio</button></div>
+<div class="row"><button class="btn" id="check" data-en="Check">Conferir</button><button class="btn" id="reset" data-en="Clear">Limpar</button></div>
+<div class="win" id="win"><h2 data-en="Stitched!">Bordado!</h2><p id="winmsg"></p><button class="btn main" id="share" data-en="Share result">Compartilhar resultado</button></div>
+<p class="help" data-en="A new puzzle every day, the same for everyone. Inspired by Stitch Logic.">Um puzzle novo por dia, igual pra todo mundo. Inspirado no Stitch Logic.</p>
+<div class="foot">K3 Games Studio · <a href="https://k3gamesstudio.com">k3gamesstudio.com</a></div>
+<script type="module">
+import { rng, dayNumber, tr, clock, share, i18n } from '../assets/k3.js';
+i18n();
+const N = 6, R = rng(2), day = dayNumber();
+document.getElementById('tag').textContent = tr('Puzzle do dia', 'Daily puzzle') + ' #' + day;
+// desenhos simétricos dão figuras bonitas; espelha a metade esquerda
+let sol;
+do {
+  sol = Array.from({ length: N }, () => new Array(N).fill(0));
+  for (let y = 0; y < N; y++) for (let x = 0; x < N / 2; x++) { const v = R() < 0.55 ? 1 : 0; sol[y][x] = v; sol[y][N - 1 - x] = v; }
+} while (sol.some(r => r.every(v => !v)) || sol.flat().filter(Boolean).length < 14);
+window.__k3test = { sol }; // usado só pelo teste automático
+const clueOf = arr => { const out = []; let c = 0; for (const v of arr) { if (v) c++; else if (c) { out.push(c); c = 0; } } if (c) out.push(c); return out.length ? out : [0]; };
+const rows = sol.map(clueOf), cols = sol[0].map((_, x) => clueOf(sol.map(r => r[x])));
+const el = document.getElementById('nono');
+let st, timer, done, checks, mode = 'fill';
+const corner = document.createElement('div'); el.appendChild(corner);
+const colEls = cols.map(c => { const d = document.createElement('div'); d.className = 'clue col'; d.innerHTML = c.map(n => `<span>${n}</span>`).join(''); el.appendChild(d); return d; });
+const rowEls = [], sq = [];
+for (let y = 0; y < N; y++) {
+  const r = document.createElement('div'); r.className = 'clue row'; r.innerHTML = rows[y].map(n => `<span>${n}</span>`).join(''); el.appendChild(r); rowEls.push(r);
+  for (let x = 0; x < N; x++) {
+    const s = document.createElement('div'); s.className = 'sq'; el.appendChild(s); sq.push(s);
+    s.addEventListener('click', () => tap(x, y));
+  }
+}
+const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+function render() {
+  sq.forEach((s, i) => { const v = st[(i / N) | 0][i % N]; s.className = 'sq' + (v === 1 ? ' fill' : v === 2 ? ' x' : ''); });
+  const filled = st.map(r => r.map(v => v === 1 ? 1 : 0));
+  rowEls.forEach((e, y) => e.classList.toggle('ok', same(clueOf(filled[y]), rows[y])));
+  colEls.forEach((e, x) => e.classList.toggle('ok', same(clueOf(filled.map(r => r[x])), cols[x])));
+  if (!done && rows.every((c, y) => same(clueOf(filled[y]), c)) && cols.every((c, x) => same(clueOf(filled.map(r => r[x])), c))) win();
+}
+function tap(x, y) {
+  if (done) return;
+  const v = st[y][x];
+  st[y][x] = mode === 'fill' ? (v === 1 ? 0 : 1) : (v === 2 ? 0 : 2);
+  render();
+}
+function win() {
+  done = true; timer.stop();
+  const s = timer.secs(), t = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  document.getElementById('winmsg').textContent = tr(`Desenho completo em ${t}.`, `Picture done in ${t}.`);
+  document.getElementById('win').classList.add('on');
+  const art = sol.map(r => r.map(v => v ? '🟧' : '⬛').join('')).join('\n');
+  document.getElementById('share').onclick = () => share(`🧵 ${tr('Ponto-Cruz', 'Cross-Stitch')} #${day} ⏱ ${t}\n${art}\nK3 Puzzles`);
+}
+function reset() {
+  st = Array.from({ length: N }, () => new Array(N).fill(0)); done = false; checks = 0;
+  document.getElementById('err').textContent = 0; document.getElementById('win').classList.remove('on');
+  if (timer) timer.stop(); timer = clock(document.getElementById('time')); render();
+}
+document.getElementById('check').onclick = () => {
+  checks++; document.getElementById('err').textContent = checks;
+  let bad = 0; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (st[y][x] === 1 && !sol[y][x]) { bad++; sq[y * N + x].animate([{ background: '#7a1d1d' }, { background: '' }], { duration: 700 }); }
+  if (!bad) sq.forEach(s => s.animate([{ boxShadow: '0 0 0 2px #5fd38d' }, { boxShadow: 'none' }], { duration: 600 }));
+};
+document.getElementById('reset').onclick = reset;
+const mF = document.getElementById('mFill'), mX = document.getElementById('mX');
+mF.onclick = () => { mode = 'fill'; mF.classList.add('on'); mX.classList.remove('on'); };
+mX.onclick = () => { mode = 'x'; mX.classList.add('on'); mF.classList.remove('on'); };
+reset();
+</script>
+</body>
+</html>
